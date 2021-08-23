@@ -36,5 +36,12 @@ func NewCache(maxKeyCount int, cacheType CacheType) Cache {
 			KeyToKeyVal:     make(map[interface{}](*list.Element)),
 		}
 	}
+	if cacheType == LFU {
+		return &LFUCache{
+			CapacityDetails: CapacityDetails{maxKeyCount: maxKeyCount},
+			Frequencies:     list.New(),
+			KeyToKeyValFreq: make(map[interface{}](*list.Element)),
+		}
+	}
 	return nil
 }
