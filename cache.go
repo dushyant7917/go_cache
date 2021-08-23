@@ -5,8 +5,7 @@ import (
 )
 
 type KeyVal struct {
-	key interface{}
-	val interface{}
+	key, val AnyType
 }
 
 type CapacityDetails struct {
@@ -14,33 +13,35 @@ type CapacityDetails struct {
 }
 
 type Cache interface {
-	Set(interface{}, interface{})
-	Get(interface{}) interface{}
+	Set(AnyType, AnyType)
+	Get(AnyType) AnyType
 	Evict()
-	GetCurrentKeyCount() int
-	Full() bool
 }
 
 func NewCache(maxKeyCount int, cacheType CacheType) Cache {
+	capacityDetails := CapacityDetails{maxKeyCount: maxKeyCount}
+	dll := list.New()
+	keyToItem := make(KeyToDLLElement)
+
 	if cacheType == FIFO {
 		return &FIFOCache{
-			CapacityDetails: CapacityDetails{maxKeyCount: maxKeyCount},
-			KeyValPairs:     list.New(),
-			KeyToKeyVal:     make(map[interface{}](*list.Element)),
+			CapacityDetails: capacityDetails,
+			KeyValPairs:     dll,
+			KeyToKeyVal:     keyToItem,
 		}
 	}
 	if cacheType == LRU {
 		return &LRUCache{
-			CapacityDetails: CapacityDetails{maxKeyCount: maxKeyCount},
-			KeyValPairs:     list.New(),
-			KeyToKeyVal:     make(map[interface{}](*list.Element)),
+			CapacityDetails: capacityDetails,
+			KeyValPairs:     dll,
+			KeyToKeyVal:     keyToItem,
 		}
 	}
 	if cacheType == LFU {
 		return &LFUCache{
-			CapacityDetails: CapacityDetails{maxKeyCount: maxKeyCount},
-			Frequencies:     list.New(),
-			KeyToKeyValFreq: make(map[interface{}](*list.Element)),
+			CapacityDetails: capacityDetails,
+			Frequencies:     dll,
+			KeyToKeyValFreq: keyToItem,
 		}
 	}
 	return nil

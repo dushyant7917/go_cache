@@ -1,36 +1,34 @@
 package go_cache
 
-import (
-	"container/list"
-)
+func moveKVToBack(cache *LRUCache, keyVal DLLElement, key, val AnyType) {
+	cache.KeyValPairs.Remove(keyVal)
+	cache.KeyValPairs.PushBack(&KeyVal{key: key, val: val})
+	cache.KeyToKeyVal[key] = cache.KeyValPairs.Back()
+}
 
 type LRUCache struct {
 	CapacityDetails
-	KeyValPairs *list.List
-	KeyToKeyVal map[interface{}](*list.Element)
+	KeyValPairs DLL
+	KeyToKeyVal KeyToDLLElement
 }
 
-func (cache *LRUCache) Set(key, val interface{}) {
+func (cache *LRUCache) Set(key, val AnyType) {
 	if kv, keyFound := cache.KeyToKeyVal[key]; keyFound {
-		cache.KeyValPairs.Remove(kv)
-		cache.KeyValPairs.PushBack(&KeyVal{key: key, val: val})
-		cache.KeyToKeyVal[key] = cache.KeyValPairs.Back()
+		moveKVToBack(cache, kv, key, val)
 		return
 	}
 
-	if cache.Full() {
+	if cacheFull(cache.maxKeyCount, cache.KeyToKeyVal) {
 		cache.Evict()
 	}
 	cache.KeyValPairs.PushBack(&KeyVal{key: key, val: val})
 	cache.KeyToKeyVal[key] = cache.KeyValPairs.Back()
 }
 
-func (cache *LRUCache) Get(key interface{}) interface{} {
+func (cache *LRUCache) Get(key AnyType) AnyType {
 	if kv, keyFound := cache.KeyToKeyVal[key]; keyFound {
 		val := kv.Value.(*KeyVal).val
-		cache.KeyValPairs.Remove(kv)
-		cache.KeyValPairs.PushBack(&KeyVal{key: key, val: val})
-		cache.KeyToKeyVal[key] = cache.KeyValPairs.Back()
+		moveKVToBack(cache, kv, key, val)
 		return val
 	}
 
@@ -46,12 +44,4 @@ func (cache *LRUCache) Evict() {
 	key := lru_kv.Value.(*KeyVal).key
 	cache.KeyValPairs.Remove(lru_kv)
 	delete(cache.KeyToKeyVal, key)
-}
-
-func (cache *LRUCache) Full() bool {
-	return len(cache.KeyToKeyVal) == cache.maxKeyCount
-}
-
-func (cache *LRUCache) GetCurrentKeyCount() int {
-	return len(cache.KeyToKeyVal)
 }

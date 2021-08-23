@@ -6,26 +6,26 @@ import (
 
 type KeyValFreq struct {
 	KeyVal
-	freqElement *list.Element
+	freqElement DLLElement
 }
 
 type Freq struct {
 	freq    int
-	keyVals *list.List
+	keyVals DLL
 }
 
 type LFUCache struct {
 	CapacityDetails
-	Frequencies     *list.List
-	KeyToKeyValFreq map[interface{}](*list.Element)
+	Frequencies     DLL
+	KeyToKeyValFreq KeyToDLLElement
 }
 
-func (cache *LFUCache) Set(key, val interface{}) {
+func (cache *LFUCache) Set(key, val AnyType) {
 	if _, keyFound := cache.KeyToKeyValFreq[key]; keyFound {
 		return
 	}
 
-	if cache.Full() {
+	if cacheFull(cache.maxKeyCount, cache.KeyToKeyValFreq) {
 		cache.Evict()
 	}
 	frontFreq := cache.Frequencies.Front()
@@ -38,7 +38,7 @@ func (cache *LFUCache) Set(key, val interface{}) {
 	cache.KeyToKeyValFreq[key] = frontFreq.Value.(*Freq).keyVals.Back()
 }
 
-func (cache *LFUCache) Get(key interface{}) interface{} {
+func (cache *LFUCache) Get(key AnyType) AnyType {
 	if _, keyFound := cache.KeyToKeyValFreq[key]; !keyFound {
 		return nil
 	}
@@ -73,12 +73,4 @@ func (cache *LFUCache) Evict() {
 	key := first_kvfElement.Value.(*KeyValFreq).key
 	leastFreqElement.Value.(*Freq).keyVals.Remove(first_kvfElement)
 	delete(cache.KeyToKeyValFreq, key)
-}
-
-func (cache *LFUCache) Full() bool {
-	return len(cache.KeyToKeyValFreq) == cache.maxKeyCount
-}
-
-func (cache *LFUCache) GetCurrentKeyCount() int {
-	return len(cache.KeyToKeyValFreq)
 }
